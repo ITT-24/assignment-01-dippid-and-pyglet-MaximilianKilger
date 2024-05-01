@@ -3,12 +3,15 @@ import sys, os, math, random
 from DIPPID import SensorUDP
 import numpy as np
 
-WIN_WIDTH:int = 700
-WIN_HEIGHT:int = 700
+WIN_WIDTH:int = 500
+WIN_HEIGHT:int = 500
 
-HEAD_TEXTURE_PATH:str = os.path.join("sprites", "head_placeholder.png")
-BODY_TEXTURE_PATH:str = os.path.join("sprites", "body_placeholder.png")
+HEAD_TEXTURE_PATH:str = os.path.join("sprites", "oniks_head.png")
+BODY_TEXTURE_PATH:str = os.path.join("sprites", "oniks_body.png")
 FOOD_TEXTURE_PATH:str = os.path.join("sprites", "food_placeholder.png")
+
+HEAD_MASS = 50
+HEAD_DRAG = 1.2
 
 HEAD_SIZE:int = 20
 FOOD_SIZE:int = 18
@@ -90,10 +93,10 @@ class Circle ():
 class Head(Circle):
 
     def __init__(self, xpos:float, ypos:float, radius:int, rotation:float=0):
-        self.xpos = xpos
-        self.ypos = ypos
-        self.radius = radius
-        self.rotation = rotation
+        self.xpos:float = xpos
+        self.ypos:float = ypos
+        self.radius:int = radius
+        self.rotation:float = rotation
 
         texture = pyglet.image.load(HEAD_TEXTURE_PATH)
         #move texture's anchor point to the center
@@ -104,6 +107,8 @@ class Head(Circle):
         self.sprite.width = self.radius*2
         self.sprite.height = self.radius*2
         self.sprite.rotation = rotation
+
+        self.velocity = np.array((0.0,0.0))
 
         self.first_body_segment:BodySegment = None
     
@@ -123,6 +128,14 @@ class Head(Circle):
             self.sprite.rotation = np.rad2deg(angle)
         if self.first_body_segment != None:
             self.first_body_segment.place_tangentially_to(self)
+        
+        drag_force = 0.5 * HEAD_DRAG * self.velocity
+        self.velocity -= drag_force / HEAD_MASS
+
+    def apply_force(self, delta_x:float, delta_y:float):
+        acceleration = np.array((delta_x, delta_y)) / HEAD_MASS
+        self.velocity += acceleration 
+        self.move(*self.velocity)
 
 
     
@@ -217,13 +230,18 @@ class BodySegment(Circle):
             
             self.next_segment = BodySegment(self.xpos + delta_x, self.ypos + delta_y, BODY_SEGMENT_SIZE, self.rotation)
             for segment in gameManager.head.get_all_body_segments():
-                if not segment is self:
+                if not segment is self and not segment is self.next_segment:
                     if self.next_segment.check_collision_with_circle(segment):
-                        print("Self-intersection rule applied")
                         delta_x *= -1
                         delta_y *= -1
                         self.next_segment = BodySegment(self.xpos + delta_x, self.ypos + delta_y, BODY_SEGMENT_SIZE, (self.rotation + np.pi) % (2*np.pi))
                         break
+            if self.next_segment.check_collision_with_circle(gameManager.head):
+                delta_x *= -1
+                delta_y *= -1
+                self.next_segment = BodySegment(self.xpos + delta_x, self.ypos + delta_y, BODY_SEGMENT_SIZE, (self.rotation + np.pi) % (2*np.pi))
+                        
+
     def check_collision_with_head(self, head:Head):
         if not head.first_body_segment is self:
             if self.check_collision_with_circle(head):
@@ -306,7 +324,7 @@ class GameManager():
             delta_x = acc_x
         if abs(acc_y) > DEADZONE:
             delta_y = acc_y
-        self.head.move(delta_x, delta_y)
+        self.head.apply_force(delta_x, delta_y)
     
     def check_food(self):
         for food in self.foods:
