@@ -1,0 +1,4 @@
+oniks_head.png, oniks_body.png: https://pokemondb.net/artwork/onix (with modifications)
+rocky_background.png: www.spriters-resource.com/fullview/48041/
+rocky_background_red.png: as rocky_background, with modifications
+sitrus_berry.png: archives.bulbagarden.net/media/upload/a/aa/Dream_Sitrus_Berry_Sprite.png

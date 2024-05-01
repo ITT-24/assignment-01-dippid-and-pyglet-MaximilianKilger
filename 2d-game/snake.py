@@ -18,6 +18,10 @@ HEAD_SIZE:int = 20
 FOOD_SIZE:int = 12
 BODY_SEGMENT_SIZE:int = 15
 
+SCORE_LABEL_XPOS:int = 15
+SCORE_LABEL_YPOS:int = 15
+SCORE_LABEL_SIZE:int = 25
+
 window = pyglet.window.Window(WIN_WIDTH,WIN_HEIGHT)
 
 #returns the euclidian distance between points (x1, y1) and (x2, y2)
@@ -114,7 +118,7 @@ class Head(Circle):
         self.first_body_segment:BodySegment = None
     
     def move(self, delta_x:float, delta_y:float, ignore_collision:bool=False):
-        DEADZONE = 0.15
+        DEADZONE:float = 0.15
         super().move(delta_x, delta_y)
         if math.sqrt(delta_x**2 + delta_y**2) > DEADZONE:
             try:
@@ -156,7 +160,7 @@ class Head(Circle):
         if self.first_body_segment != None:
             self.first_body_segment.draw()
     
-    def check_collision_with_head(self):
+    def check_collision_with_head(self)->bool:
         if self.first_body_segment != None:
             return self.first_body_segment.check_collision_with_head(self)
         else:
@@ -247,30 +251,21 @@ class BodySegment(Circle):
             return False
         else:
             return self.next_segment.check_collision_with_head(head)
-
-
-            
-            
-
-
     
 class Food(Circle):
 
     def __init__(self, xpos:float, ypos:float, radius:int):
-        self.xpos = xpos
-        self.ypos = ypos
-        self.radius = radius
+        self.xpos:float = xpos
+        self.ypos:float = ypos
+        self.radius:float = radius
         texture = pyglet.image.load(FOOD_TEXTURE_PATH)
         texture.anchor_x = texture.width//2
         texture.anchor_y = texture.height//2
         self.sprite = pyglet.sprite.Sprite(texture, x=xpos, y=ypos)
         self.sprite.width = self.radius*2
         self.sprite.height = self.radius*2
-        
 
-    
-
-PORT = 5700
+PORT:int = 5700
 sensor = SensorUDP(PORT)
 
 def get_sensor_data():
@@ -284,6 +279,7 @@ class GameManager():
     def __init__(self):
         self.init_background()
         self.reset()
+        self.score_label = pyglet.text.Label(f"Score: {self.score}", font_name="Cooper", x=SCORE_LABEL_XPOS, y=SCORE_LABEL_YPOS, font_size=SCORE_LABEL_SIZE)
         self.paused:bool = False
 
     def init_background(self):
@@ -291,8 +287,8 @@ class GameManager():
         self.background_batch = pyglet.graphics.Batch()
         self.background_sprites = []
         
-        num_rows = math.ceil(window.height / self.background_image.height)
-        num_cols = math.ceil(window.width / self.background_image.width)
+        num_rows:int = math.ceil(window.height / self.background_image.height)
+        num_cols:int = math.ceil(window.width / self.background_image.width)
         for i in range(num_rows):
             for j in range(num_cols):
                 xpos = j * self.background_image.width
@@ -300,10 +296,11 @@ class GameManager():
                 self.background_sprites.append(pyglet.sprite.Sprite(self.background_image, x=xpos, y=ypos, batch=self.background_batch))
 
     def draw_background(self):
-        #self.background_image.blit(0,0)
         self.background_batch.draw()
-
-
+    
+    def draw_UI(self):
+        self.score_label.text = f"Score: {self.score}"
+        self.score_label.draw()
 
     def reset(self):
         self.head = Head(window.width/2, window.height/2, HEAD_SIZE)
@@ -324,13 +321,14 @@ class GameManager():
             food.draw()
             
         self.head.draw()
+        
+        self.draw_UI()
 
     def spawn_food(self):
-        xpos = random.randrange(FOOD_SIZE, window.width-FOOD_SIZE)
-        ypos = random.randrange(FOOD_SIZE, window.height-FOOD_SIZE)
+        xpos:int = random.randrange(FOOD_SIZE, window.width-FOOD_SIZE)
+        ypos:int = random.randrange(FOOD_SIZE, window.height-FOOD_SIZE)
         food = Food(xpos, ypos, FOOD_SIZE)
         self.foods.append(food)
-
 
     def handle_movement(self,acc_x:float, acc_y:float):
         if self.paused:
@@ -352,6 +350,7 @@ class GameManager():
                 self.spawn_food()
                 self.head.add_segment()
                 break
+    
     def check_snake_eats_itself(self):
         if self.head.check_collision_with_head():
             self.reset()
