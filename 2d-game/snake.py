@@ -8,13 +8,14 @@ WIN_HEIGHT:int = 500
 
 HEAD_TEXTURE_PATH:str = os.path.join("sprites", "oniks_head.png")
 BODY_TEXTURE_PATH:str = os.path.join("sprites", "oniks_body.png")
-FOOD_TEXTURE_PATH:str = os.path.join("sprites", "food_placeholder.png")
+FOOD_TEXTURE_PATH:str = os.path.join("sprites", "sitrus_berry.png")
+BACKGROUND_TEXTURE_PATH:str = os.path.join("sprites", "rocky_background_red.png")
 
 HEAD_MASS = 50
-HEAD_DRAG = 1.2
+HEAD_DRAG = 0.8
 
 HEAD_SIZE:int = 20
-FOOD_SIZE:int = 18
+FOOD_SIZE:int = 12
 BODY_SEGMENT_SIZE:int = 15
 
 window = pyglet.window.Window(WIN_WIDTH,WIN_HEIGHT)
@@ -113,11 +114,9 @@ class Head(Circle):
         self.first_body_segment:BodySegment = None
     
     def move(self, delta_x:float, delta_y:float, ignore_collision:bool=False):
-        DEADZONE_ANGLE = 0.15
+        DEADZONE = 0.15
         super().move(delta_x, delta_y)
-        if math.sqrt(delta_x**2 + delta_y**2) > DEADZONE_ANGLE:
-            if delta_y == 0:
-                delta_y = 0.000001
+        if math.sqrt(delta_x**2 + delta_y**2) > DEADZONE:
             try:
                 angle = np.arctan(delta_x / delta_y)
             except ZeroDivisionError:
@@ -147,8 +146,6 @@ class Head(Circle):
             #if not 0 < self.rotation < np.pi:
             #    delta_x *= -1
             #    delta_y *= -1
-            
-            print(delta_x, delta_y)
 
             self.first_body_segment = BodySegment(self.xpos + delta_x, self.ypos + delta_y, BODY_SEGMENT_SIZE, self.rotation)
         else:
@@ -201,7 +198,7 @@ class BodySegment(Circle):
         
         super().move(delta_x, delta_y)
         try:
-            angle = np.arctan2(delta_x , delta_y)
+            angle = np.arctan(delta_x / delta_y)
         except ZeroDivisionError:
             angle = np.pi/2
         if delta_y > 0:
@@ -285,8 +282,28 @@ def get_sensor_data():
 
 class GameManager():
     def __init__(self):
+        self.init_background()
         self.reset()
         self.paused:bool = False
+
+    def init_background(self):
+        self.background_image = pyglet.image.load(BACKGROUND_TEXTURE_PATH)
+        self.background_batch = pyglet.graphics.Batch()
+        self.background_sprites = []
+        
+        num_rows = math.ceil(window.height / self.background_image.height)
+        num_cols = math.ceil(window.width / self.background_image.width)
+        for i in range(num_rows):
+            for j in range(num_cols):
+                xpos = j * self.background_image.width
+                ypos = i * self.background_image.height
+                self.background_sprites.append(pyglet.sprite.Sprite(self.background_image, x=xpos, y=ypos, batch=self.background_batch))
+
+    def draw_background(self):
+        #self.background_image.blit(0,0)
+        self.background_batch.draw()
+
+
 
     def reset(self):
         self.head = Head(window.width/2, window.height/2, HEAD_SIZE)
@@ -302,6 +319,7 @@ class GameManager():
 
 
     def render(self):
+        self.draw_background()
         for food in self.foods:
             food.draw()
             
@@ -329,7 +347,6 @@ class GameManager():
     def check_food(self):
         for food in self.foods:
             if self.head.check_collision_with_circle(food):
-                print("Munch")
                 self.score += 1
                 self.foods.remove(food)
                 self.spawn_food()
@@ -359,7 +376,6 @@ def on_key_press(symbol, modifiers):
         gameManager.head.move(-rate_acc,0)
     elif symbol == pyglet.window.key.RIGHT:
         gameManager.head.move(rate_acc,0)
-
 
         
 
