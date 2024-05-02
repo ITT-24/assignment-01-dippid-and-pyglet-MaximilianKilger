@@ -24,6 +24,8 @@ SCORE_LABEL_SIZE:int = 25
 
 window = pyglet.window.Window(WIN_WIDTH,WIN_HEIGHT)
 
+sprite_scale = 0.1
+
 #returns the euclidian distance between points (x1, y1) and (x2, y2)
 def euclidian(pos1:tuple[float,float], pos2:tuple[float,float]):
     return math.sqrt( (pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2)
@@ -109,8 +111,9 @@ class Head(Circle):
         texture.anchor_y = texture.height//2
 
         self.sprite = pyglet.sprite.Sprite(texture, x=xpos, y=ypos)
-        self.sprite.width = self.radius*2
-        self.sprite.height = self.radius*2
+        global sprite_scale
+        self.sprite.scale_x = sprite_scale
+        self.sprite.scale_y = sprite_scale
         self.sprite.rotation = rotation
 
         self.velocity = np.array((0.0,0.0))
@@ -188,8 +191,12 @@ class BodySegment(Circle):
         texture.anchor_y = texture.height//2
 
         self.sprite = pyglet.sprite.Sprite(texture, x=xpos, y=ypos)
-        self.sprite.width = self.radius*2
-        self.sprite.height = self.radius*2
+        #self.sprite.width = self.radius*2
+        #self.sprite.height = self.radius*2
+
+        global sprite_scale
+        self.sprite.scale_x = sprite_scale
+        self.sprite.scale_y = sprite_scale
 
         self.next_segment:BodySegment = None
     
@@ -262,8 +269,11 @@ class Food(Circle):
         texture.anchor_x = texture.width//2
         texture.anchor_y = texture.height//2
         self.sprite = pyglet.sprite.Sprite(texture, x=xpos, y=ypos)
-        self.sprite.width = self.radius*2
-        self.sprite.height = self.radius*2
+        #self.sprite.width = self.radius*2
+        #self.sprite.height = self.radius*2
+        global sprite_scale
+        self.sprite.scale_x = sprite_scale
+        self.sprite.scale_y = sprite_scale
 
 PORT:int = 5700
 sensor = SensorUDP(PORT)
